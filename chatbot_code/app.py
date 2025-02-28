@@ -1,7 +1,11 @@
+from flask import Flask, request, jsonify, render_template
+import os
 import boto3
 import json
 import yfinance as yf
 from yahooquery import search
+
+app = Flask(__name__)
 
 bedrock_client = boto3.client("bedrock-runtime", region_name="ap-northeast-2")
 
@@ -29,9 +33,9 @@ def find_company(text):
         if company in text:
             return company
     return ""
+#### ------------------ ####
 
-#### 챗봇 함수 ####
-def chatbot_user_input(user_input):
+def chatbot_response(user_input):
     company_name = find_company(user_input)
     symbol = get_stock_symbol(company_name)
 
@@ -42,11 +46,11 @@ def chatbot_user_input(user_input):
         currency = get_currency(symbol)
         stock_info = f"{company_name}의 주가는 {stock_price}{currency}입니다."
 
-
     prompt = (
-        f"당신은 친절한 AI 비서입니다. 질문에 대해 친절하고 유익한 답변을 주세요."
-        f"주식 정보가 포함된 경우 가격을 포함해서 답변해주세요."
-        f"일반적인 질문이면 적절한 답변을 해주세요."
+        f"너는 AI 비서야. 질문에 대해 친절하고 유익한 답변을 해줘."
+        f"주식 정보가 포함된 경우 가격을 포함해서 답변해줘."
+        f"일반적인 질문이면 적절한 답변을 해줘."
+        f"무조건 200자 이내에 답변을 해줘줘"
         f"질문: {user_input}\n"
         f"답변:"
     )
@@ -75,7 +79,26 @@ def chatbot_user_input(user_input):
 
     return stock_info if stock_info else ai_response.strip()
 
-#### 최종 챗봇 실행 ####
-user_input = input("질문을 입력하세요: ")
-response = chatbot_user_input(user_input)
-print(response)
+#### Flask 엔드포인트 ####
+@app.route("/chat", methods=["POST"])
+def chat():
+    data = request.get_json()
+
+    if not data or "message" not in data:
+        return jsonify({"error": "메시지가 없습니다."}), 400
+
+    user_input = data["message"].strip() 
+
+    if not user_input:
+        return jsonify({"error": "빈 메시지입니다."}), 400
+
+    response = chatbot_response(user_input) 
+    return jsonify({"response": response})
+
+
+@app.route("/")
+def index():
+    return render_template("index.html") 
+
+if __name__ == "__main__":
+    app.run(host="0.0.0.0", port=5000, debug=True)
