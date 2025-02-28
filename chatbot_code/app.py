@@ -5,6 +5,8 @@ import json
 import yfinance as yf
 from yahooquery import search
 
+inferenceProfileArn= os.getenv("BEDROCK_INFERENCE_PROFILE_ARN")
+
 app = Flask(__name__)
 
 bedrock_client = boto3.client("bedrock-runtime", region_name="ap-northeast-2")
@@ -56,7 +58,7 @@ def chatbot_response(user_input):
     )
 
     response = bedrock_client.invoke_model(
-        modelId="anthropic.claude-3-5-sonnet-20240620-v1:0",
+        modelId=inferenceProfileArn,
         contentType="application/json",
         accept="application/json",
         body=json.dumps({
@@ -94,7 +96,7 @@ def chat():
 
     response = chatbot_response(user_input) 
     return jsonify({"response": response})
-
+#### ---------------- ####
 
 @app.route("/")
 def index():
