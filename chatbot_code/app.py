@@ -4,6 +4,7 @@ import boto3
 import json
 import yfinance as yf
 from yahooquery import search
+from company_dict import company_dict
 
 inferenceProfileArn= os.getenv("BEDROCK_INFERENCE_PROFILE_ARN")
 
@@ -29,16 +30,18 @@ def get_currency(symbol):
         return "원"
     return "달러"
 
-company_list = ["Apple"]
-def find_company(text):
-    for company in company_list:
-        if company in text:
-            return company
-    return ""
+def find_company_symbol(name):
+    name_list = name.lower().split()
+    for nl in name_list:
+        if nl in company_dict:
+            return company_dict.get(nl)
+        else:
+            return None
 #### ------------------ ####
 
 def chatbot_response(user_input):
-    company_name = find_company(user_input)
+    company_name = find_company_symbol(user_input)
+
     symbol = get_stock_symbol(company_name)
 
     stock_info = ""
