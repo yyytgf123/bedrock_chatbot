@@ -1,3 +1,4 @@
 company_dict = {
-    "apple": "AAPL"
+    "apple": "AAPL",
+    "tesla": "TSLA"
 }

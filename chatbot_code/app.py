@@ -5,6 +5,7 @@ import json
 import yfinance as yf
 from yahooquery import search
 from company_dict import company_dict
+from deep_translator import GoogleTranslator
 
 inferenceProfileArn= os.getenv("BEDROCK_INFERENCE_PROFILE_ARN")
 
@@ -30,13 +31,27 @@ def get_currency(symbol):
         return "원"
     return "달러"
 
+## dic 사용용
+# def find_company_symbol(name):
+#     name_list = name.lower().split()
+#     for nl in name_list:
+#         if nl in company_dict:
+#             return company_dict.get(nl)
+#         else:
+#             return None
+
+def translate_to_english(translate):
+    return GoogleTranslator(source='ko', target='en').translate(translate)
+
 def find_company_symbol(name):
-    name_list = name.lower().split()
-    for nl in name_list:
-        if nl in company_dict:
-            return company_dict.get(nl)
-        else:
-            return None
+    if not name.isascii():
+        name = translate_to_english(name)
+
+    result = search(name)
+    
+    if result and 'quotes' in result and result["quotes"]:
+        return result['quotes'][0]['symbol']
+    return None
 #### ------------------ ####
 
 def chatbot_response(user_input):
@@ -49,13 +64,14 @@ def chatbot_response(user_input):
     if symbol:
         stock_price = get_stock_price(symbol)
         currency = get_currency(symbol)
-        stock_info = f"{company_name}의 주가는 {stock_price}{currency}입니다."
+        stock_info = f"{company_name}의 주가는 {stock_price}{currency}입니다. "
 
     prompt = (
         f"너는 AI 비서야. 질문에 대해 친절하고 유익한 답변을 해줘."
         f"주식 정보가 포함된 경우 가격을 포함해서 답변해줘."
         f"일반적인 질문이면 적절한 답변을 해줘."
-        f"무조건 200자 이내에 답변을 해줘줘"
+        f"무조건 200자 이내에 답변을 해줘"
+
         f"질문: {user_input}\n"
         f"답변:"
     )
